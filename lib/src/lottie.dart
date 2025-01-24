@@ -1,6 +1,8 @@
 import 'dart:typed_data';
+
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
+
 import '../lottie.dart';
 import 'composition.dart';
 import 'l.dart';
@@ -33,14 +35,16 @@ class Lottie extends StatefulWidget {
     bool? addRepaintBoundary,
     this.filterQuality,
     this.renderCache,
-  })  : animate = animate ?? true,
+    this.from,
+    this.durationMilliseconds,
+  })
+      : animate = animate ?? true,
         reverse = reverse ?? false,
         repeat = repeat ?? true,
         addRepaintBoundary = addRepaintBoundary ?? true;
 
   /// Creates a widget that displays an [LottieComposition] obtained from an [AssetBundle].
-  static LottieBuilder asset(
-    String name, {
+  static LottieBuilder asset(String name, {
     Animation<double>? controller,
     bool? animate,
     FrameRate? frameRate,
@@ -65,6 +69,8 @@ class Lottie extends StatefulWidget {
     LottieDecoder? decoder,
     RenderCache? renderCache,
     bool? backgroundLoading,
+    double? from,
+    int? durationMilliseconds,
   }) =>
       LottieBuilder.asset(
         name,
@@ -92,11 +98,12 @@ class Lottie extends StatefulWidget {
         decoder: decoder,
         renderCache: renderCache,
         backgroundLoading: backgroundLoading,
+        from: from,
+        durationMilliseconds: durationMilliseconds,
       );
 
   /// Creates a widget that displays an [LottieComposition] obtained from a [File].
-  static LottieBuilder file(
-    Object file, {
+  static LottieBuilder file(Object file, {
     Animation<double>? controller,
     FrameRate? frameRate,
     bool? animate,
@@ -147,8 +154,7 @@ class Lottie extends StatefulWidget {
       );
 
   /// Creates a widget that displays an [LottieComposition] obtained from a [Uint8List].
-  static LottieBuilder memory(
-    Uint8List bytes, {
+  static LottieBuilder memory(Uint8List bytes, {
     Animation<double>? controller,
     FrameRate? frameRate,
     bool? animate,
@@ -199,8 +205,7 @@ class Lottie extends StatefulWidget {
       );
 
   /// Creates a widget that displays an [LottieComposition] obtained from the network.
-  static LottieBuilder network(
-    String url, {
+  static LottieBuilder network(String url, {
     http.Client? client,
     Map<String, String>? headers,
     Animation<double>? controller,
@@ -380,8 +385,11 @@ class Lottie extends StatefulWidget {
   /// to maximum 50MB. After that, animations are not cached anymore.
   /// {@endtemplate}
   final RenderCache? renderCache;
+  final double? from;
+  final int? durationMilliseconds;
 
   static bool get traceEnabled => L.traceEnabled;
+
   static set traceEnabled(bool enabled) {
     L.traceEnabled = enabled;
   }
@@ -399,7 +407,9 @@ class _LottieState extends State<Lottie> with TickerProviderStateMixin {
 
     _autoAnimation = AnimationController(
         vsync: this,
-        duration: widget.composition?.duration ?? const Duration(seconds: 1));
+        duration: (widget.durationMilliseconds != null) ? Duration(
+            milliseconds: widget.durationMilliseconds!) : (widget.composition
+            ?.duration ?? const Duration(seconds: 1)));
     _updateAutoAnimation();
   }
 
@@ -408,7 +418,9 @@ class _LottieState extends State<Lottie> with TickerProviderStateMixin {
     super.didUpdateWidget(oldWidget);
 
     _autoAnimation.duration =
-        widget.composition?.duration ?? const Duration(seconds: 1);
+    (widget.durationMilliseconds != null) ? Duration(
+        milliseconds: widget.durationMilliseconds!) : (widget.composition
+        ?.duration ?? const Duration(seconds: 1));
     _updateAutoAnimation();
   }
 
@@ -419,7 +431,7 @@ class _LottieState extends State<Lottie> with TickerProviderStateMixin {
       if (widget.repeat) {
         _autoAnimation.repeat(reverse: widget.reverse);
       } else {
-        _autoAnimation.forward();
+        _autoAnimation.forward(from: widget.from);
       }
     }
   }
